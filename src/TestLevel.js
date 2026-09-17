@@ -155,6 +155,9 @@ export class TestLevel {
       new THREE.Vector3(x - size / 2, y, z - size / 2),
       new THREE.Vector3(x + size / 2, y + size, z + size / 2)
     );
+    // Mark this collider so PlayerController can treat it as a climbable
+    // platform: land on the top instead of getting stuck against its side.
+    box.userData = { isClimbable: true };
     this.crates.push({ mesh, box });
     return box;
   }
@@ -212,9 +215,12 @@ export class TestLevel {
         const overlapX = position.x + radius > box.min.x && position.x - radius < box.max.x;
         const overlapZ = position.z + radius > box.min.z && position.z - radius < box.max.z;
         if (!overlapX || !overlapZ) continue;
-        if (previousY >= box.max.y - 0.25 && position.y <= box.max.y + 0.25) {
-          ground = Math.max(ground, box.max.y);
-        }
+
+        // A crate top is a platform. Detect a downward crossing of its top,
+        // then keep it as the current ground while the player remains over it.
+        const crossedTop = previousY >= box.max.y - 0.08 && position.y <= box.max.y + 0.08;
+        const alreadyStanding = Math.abs(previousY - box.max.y) <= 0.08 && position.y <= box.max.y + 0.08;
+        if (crossedTop || alreadyStanding) ground = Math.max(ground, box.max.y);
       }
     }
     return ground;

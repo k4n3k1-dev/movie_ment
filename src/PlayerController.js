@@ -66,11 +66,25 @@ export class PlayerController {
     if (!this.level) return;
     const r = this.collisionRadius;
     const playerHeight = this.crawling ? this.crawlHeight : this.standingHeight;
-    for (const box of this.level.getColliders()) {
-      // Overhead crawl obstacles are passable while crawling.
-      if (box.min.y > 0.15 && box.min.y >= playerHeight - 0.05) continue;
-      const closestX = THREE.MathUtils.clamp(position.x, box.min.x, box.max.x);
-      const closestZ = THREE.MathUtils.clamp(position.z, box.min.z, box.max.z);
+    const feetY = position.y;
+    const headY = feetY + playerHeight;
+
+    for (const collider of this.level.getColliders()) {
+      // Overhead crawl obstacles are passable while crawling.  When standing,
+      // the roof is treated as a ceiling by the vertical checks below.
+      if (collider.min.y > 0.15 && collider.min.y >= playerHeight - 0.05) continue;
+
+      // Boxes are climbable platforms, not invisible vertical walls.  Only
+      // resolve their sides when the player's body is actually alongside the
+      // box. While rising, let the player move through the side and land on
+      // the top on the way down. This is what makes 1/2/3-high stacks usable.
+      const isCrate = collider.userData?.isClimbable;
+      const verticalOverlap = headY > collider.min.y + 0.02 && feetY < collider.max.y - 0.02;
+      if (isCrate && (this.velocityY > 0 || !verticalOverlap)) continue;
+      if (!verticalOverlap && !isCrate) continue;
+
+      const closestX = THREE.MathUtils.clamp(position.x, collider.min.x, collider.max.x);
+      const closestZ = THREE.MathUtils.clamp(position.z, collider.min.z, collider.max.z);
       const dx = position.x - closestX;
       const dz = position.z - closestZ;
       const distSq = dx * dx + dz * dz;
