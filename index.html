@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Museum Heist — Player Prototype</title>
+    <style>
+      html, body { margin: 0; overflow: hidden; background: #111318; font-family: system-ui, sans-serif; }
+      canvas { display: block; }
+      #controls {
+        position: fixed;
+        bottom: 12px;
+        left: 12px;
+        padding: 10px 14px;
+        background: rgba(20, 22, 28, 0.7);
+        color: #cfd3da;
+        font-size: 13px;
+        line-height: 1.6;
+        border-radius: 6px;
+        pointer-events: none;
+      }
+      #controls b { color: #fff; }
+      #interact-prompt {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, 40px);
+        padding: 8px 16px;
+        background: rgba(20, 22, 28, 0.85);
+        color: #fff;
+        font-size: 15px;
+        font-weight: 600;
+        border-radius: 6px;
+        pointer-events: none;
+        letter-spacing: 0.5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="interact-prompt">Press E</div>
+    <div id="controls">
+      <div><b>Click canvas</b> — lock mouse to look around</div>
+      <div><b>W A S D</b> — move</div>
+      <div><b>Mouse</b> — look / orbit camera</div>
+      <div><b>Space</b> — jump</div>
+      <div><b>Shift</b> — sprint</div>
+      <div><b>E</b> — open/close nearby door</div>
+      <div><b>1</b> third-person &nbsp; <b>2</b> first-person &nbsp; <b>3</b> top-down</div>
+    </div>
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
