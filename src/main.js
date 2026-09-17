@@ -14,11 +14,11 @@ renderer.shadowMap.enabled = true;
 document.body.appendChild(renderer.domElement);
 
 // low night-time ambient — rooms brighten individually as you enter them (see TestLevel)
-const hemi = new THREE.HemisphereLight(0xdff1ff, 0x8a765d, 1.5);
+const hemi = new THREE.HemisphereLight(0xeaf7ff, 0x6f5237, 1.8);
 scene.add(hemi);
 
 // Daylight key light so the building and character read as a daytime scene.
-const sun = new THREE.DirectionalLight(0xfff4dc, 2.2);
+const sun = new THREE.DirectionalLight(0xfff1cf, 2.5);
 sun.position.set(-18, 28, 12);
 sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048);

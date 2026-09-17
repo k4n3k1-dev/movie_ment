@@ -1,17 +1,5 @@
 import * as THREE from 'three';
 
-/**
- * Drives the Player from keyboard/mouse input and manages three camera modes.
- *
- * Camera modes (switch with 1 / 2 / 3):
- *   1 - chase   : elevated third-person, mouse-orbit around the player (default)
- *   2 - first   : eye-level first-person, mouse controls look direction directly
- *   3 - top     : fixed high overview of the whole floor (doesn't follow the player)
- *
- * Movement is always camera-yaw-relative: W moves "forward" from wherever you're facing.
- *
- * Click the canvas to lock the pointer and enable mouse-look.
- */
 export class PlayerController {
   constructor(camera, domElement, player, level = null) {
     this.camera = camera;
@@ -21,30 +9,28 @@ export class PlayerController {
 
     this.moveSpeed = 3.5;
     this.sprintMultiplier = 1.6;
-    this.sprintUnlocked = true; // sprint enabled for testing; gate this later behind Level 1's reward
+    this.sprintUnlocked = true;
     this.jumpVelocity = 5;
     this.gravity = -14;
     this.collisionRadius = 0.35;
-
+    this.standingHeight = 1.9;
+    this.crawlHeight = 1.05;
     this.velocityY = 0;
     this.grounded = true;
-
+    this.jumpCount = 0;
+    this.maxJumps = 2;
+    this.crawling = false;
     this.keys = new Set();
-    this.yaw = 0;          // shared facing angle: drives movement AND chase/first-person camera
-    this.chaseHeight = 0.5; // 0.15 (low) .. 1.3 (high) — chase camera height factor, mouse-controlled
-    this.lookPitch = 0;     // first-person up/down look angle, mouse-controlled
-    this.distance = 5;      // chase camera distance behind the player
-
-    this.cameraMode = 'chase'; // 'chase' | 'first' | 'top'
-
+    this.yaw = 0;
+    this.chaseHeight = 0.5;
+    this.lookPitch = 0;
+    this.distance = 5;
+    this.cameraMode = 'chase';
     this.interactCallback = null;
-
     this._bind();
   }
 
-  onInteract(fn) {
-    this.interactCallback = fn;
-  }
+  onInteract(fn) { this.interactCallback = fn; }
 
   _bind() {
     window.addEventListener('keydown', (e) => {
@@ -53,9 +39,9 @@ export class PlayerController {
       if (e.code === 'Digit1') this._setCameraMode('chase');
       if (e.code === 'Digit2') this._setCameraMode('first');
       if (e.code === 'Digit3') this._setCameraMode('top');
+      if ((e.code === 'KeyC' || e.code === 'ControlLeft') && !e.repeat) this.crawling = !this.crawling;
     });
     window.addEventListener('keyup', (e) => this.keys.delete(e.code));
-
     this.dom.addEventListener('click', () => this.dom.requestPointerLock());
     document.addEventListener('mousemove', (e) => {
       if (document.pointerLockElement !== this.dom) return;
@@ -67,21 +53,22 @@ export class PlayerController {
 
   _setCameraMode(mode) {
     this.cameraMode = mode;
-    // hide the avatar body in first-person so it doesn't clip the view
     this.player.setVisible(mode !== 'first');
   }
 
   get moveState() {
-    const moving = this.keys.has('KeyW') || this.keys.has('KeyS') ||
-      this.keys.has('KeyA') || this.keys.has('KeyD');
-    const sprinting = this.sprintUnlocked && this.keys.has('ShiftLeft');
+    const moving = this.keys.has('KeyW') || this.keys.has('KeyS') || this.keys.has('KeyA') || this.keys.has('KeyD');
+    const sprinting = this.sprintUnlocked && this.keys.has('ShiftLeft') && !this.crawling;
     return { moving, speed: sprinting ? this.sprintMultiplier : 1 };
   }
 
   _resolveCollisions(position) {
     if (!this.level) return;
     const r = this.collisionRadius;
+    const playerHeight = this.crawling ? this.crawlHeight : this.standingHeight;
     for (const box of this.level.getColliders()) {
+      // Overhead crawl obstacles are passable while crawling.
+      if (box.min.y > 0.15 && box.min.y >= playerHeight - 0.05) continue;
       const closestX = THREE.MathUtils.clamp(position.x, box.min.x, box.max.x);
       const closestZ = THREE.MathUtils.clamp(position.z, box.min.z, box.max.z);
       const dx = position.x - closestX;
@@ -96,13 +83,22 @@ export class PlayerController {
     }
   }
 
+  _tryJump() {
+    if (this.crawling) return;
+    if (this.grounded) {
+      this.velocityY = this.jumpVelocity;
+      this.grounded = false;
+      this.jumpCount = 1;
+    } else if (this.jumpCount < this.maxJumps) {
+      this.velocityY = this.jumpVelocity;
+      this.jumpCount++;
+    }
+  }
+
   update(delta) {
     const forward = new THREE.Vector3(Math.sin(this.yaw), 0, Math.cos(this.yaw));
     const right = new THREE.Vector3(Math.sin(this.yaw + Math.PI / 2), 0, Math.cos(this.yaw + Math.PI / 2));
-
     const move = new THREE.Vector3();
-    // First-person (2) uses the requested reversed WASD mapping.
-    // Third-person (1) and top-down (3) keep the normal mapping.
     const reversed = this.cameraMode === 'first';
     if (this.keys.has('KeyW')) reversed ? move.sub(forward) : move.add(forward);
     if (this.keys.has('KeyS')) reversed ? move.add(forward) : move.sub(forward);
@@ -111,57 +107,57 @@ export class PlayerController {
 
     const { moving, speed } = this.moveState;
     const playerObj = this.player.object3D;
-
     if (moving) {
       move.normalize().multiplyScalar(this.moveSpeed * speed * delta);
       playerObj.position.add(move);
       this._resolveCollisions(playerObj.position);
-
       const targetAngle = Math.atan2(move.x, move.z);
       let diff = targetAngle - playerObj.rotation.y;
       diff = Math.atan2(Math.sin(diff), Math.cos(diff));
       playerObj.rotation.y += diff * Math.min(1, 10 * delta);
     }
 
-    if (this.keys.has('Space') && this.grounded) {
-      this.velocityY = this.jumpVelocity;
-      this.grounded = false;
-    }
+    // Space is edge-triggered so holding it doesn't consume both jumps immediately.
+    if (this.keys.has('Space') && !this.spaceWasDown) this._tryJump();
+    this.spaceWasDown = this.keys.has('Space');
+
     this.velocityY += this.gravity * delta;
+    const previousY = playerObj.position.y;
     playerObj.position.y += this.velocityY * delta;
-    if (playerObj.position.y <= 0) {
-      playerObj.position.y = 0;
+    const groundHeight = this.level?.getGroundHeight(playerObj.position, this.collisionRadius, previousY, this.velocityY, this.crawling) ?? 0;
+    if (playerObj.position.y <= groundHeight) {
+      playerObj.position.y = groundHeight;
       this.velocityY = 0;
       this.grounded = true;
+      this.jumpCount = 0;
+    } else {
+      this.grounded = false;
     }
 
-    this.player.update(delta, { moving, speed: moving ? speed : 0 });
+    // Prevent entering an overhead obstacle while standing; crawl lets the player pass.
+    if (!this.crawling && this.level?.isBlockedByLowCeiling(playerObj.position, this.collisionRadius, this.standingHeight)) {
+      playerObj.position.y = Math.max(playerObj.position.y, this.level.getGroundHeight(playerObj.position, this.collisionRadius, previousY, this.velocityY, false));
+    }
 
+    this.player.update(delta, { moving, speed: moving ? speed : 0, grounded: this.grounded, verticalVelocity: this.velocityY, crawling: this.crawling });
     this._updateCamera(playerObj);
   }
 
   _updateCamera(playerObj) {
+    const eyeHeight = this.crawling ? 0.9 : 1.6;
     if (this.cameraMode === 'first') {
-      this.camera.position.copy(playerObj.position).add(new THREE.Vector3(0, 1.6, 0));
+      this.camera.position.copy(playerObj.position).add(new THREE.Vector3(0, eyeHeight, 0));
       this.camera.rotation.order = 'YXZ';
       this.camera.rotation.set(this.lookPitch, this.yaw, 0);
       return;
     }
-
     if (this.cameraMode === 'top') {
-      // Fixed overview of the whole floor — doesn't track the player.
       this.camera.position.set(0, 55, 22);
       this.camera.lookAt(0, 0, 0);
       return;
     }
-
-    // 'chase' (default): elevated third-person, orbiting on mouse look.
-    const camOffset = new THREE.Vector3(
-      Math.sin(this.yaw) * -this.distance,
-      this.distance * this.chaseHeight,
-      Math.cos(this.yaw) * -this.distance
-    );
+    const camOffset = new THREE.Vector3(Math.sin(this.yaw) * -this.distance, this.distance * this.chaseHeight, Math.cos(this.yaw) * -this.distance);
     this.camera.position.copy(playerObj.position).add(camOffset);
-    this.camera.lookAt(playerObj.position.clone().add(new THREE.Vector3(0, 1, 0)));
+    this.camera.lookAt(playerObj.position.clone().add(new THREE.Vector3(0, this.crawling ? 0.7 : 1, 0)));
   }
 }
