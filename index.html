@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>House Heist — 3D Prototype</title>
+  <style>
+    :root { color-scheme: dark; }
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #9cc8e8; font-family: Inter, system-ui, sans-serif; }
+    canvas { display: block; }
+    #hud { position: fixed; inset: 0; pointer-events: none; }
+    #brand { position: fixed; top: 18px; left: 20px; padding: 8px 12px; border: 1px solid rgba(255,255,255,.18); border-radius: 7px; background: rgba(8,12,15,.55); backdrop-filter: blur(6px); color: #fff; letter-spacing: 1.2px; font-size: 13px; font-weight: 700; }
+    #status { position: fixed; top: 20px; right: 20px; color: rgba(255,255,255,.9); font-size: 11px; letter-spacing: 1.3px; }
+    #crosshair { position: fixed; left: 50%; top: 50%; width: 4px; height: 4px; margin: -2px; border-radius: 50%; background: rgba(255,255,255,.75); box-shadow: 0 0 8px rgba(0,0,0,.8); }
+    #interact-prompt { display: none; position: fixed; left: 50%; bottom: 13%; transform: translateX(-50%); padding: 9px 15px; border-radius: 6px; background: rgba(10,13,15,.86); color: white; font-size: 13px; font-weight: 700; letter-spacing: .7px; }
+    #controls { position: fixed; left: 18px; bottom: 18px; max-width: 310px; padding: 12px 14px; border: 1px solid rgba(255,255,255,.14); border-radius: 8px; background: rgba(8,11,14,.68); color: rgba(240,244,245,.86); font-size: 11px; line-height: 1.75; backdrop-filter: blur(8px); }
+    #controls b { color: #fff; }
+  </style>
+</head>
+<body>
+  <div id="hud">
+    <div id="brand">HOUSE HEIST // DAY</div>
+    <div id="status">THIRD PERSON</div>
+    <div id="crosshair"></div>
+    <div id="interact-prompt">E — OPEN / CLOSE DOOR</div>
+    <div id="controls">
+      <div><b>Click</b> — capture mouse / look</div>
+      <div><b>W A S D</b> — move &nbsp; <b>Shift</b> — sprint</div>
+      <div><b>Space</b> — jump / double jump</div>
+      <div><b>C / Ctrl</b> — crouch / crawl</div>
+      <div><b>E</b> — interact with doors</div>
+      <div><b>1 / 2 / 3</b> — third / first / tactical camera</div>
+    </div>
+  </div>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
