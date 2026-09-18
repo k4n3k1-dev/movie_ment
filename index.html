@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>House Heist — Daylight 3D</title>
+    <style>
+      html, body { margin: 0; overflow: hidden; background: #9ec8e7; font-family: Inter, system-ui, -apple-system, Segoe UI, sans-serif; }
+      canvas { display: block; }
+      #hud { position: fixed; inset: 0; pointer-events: none; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,.55); }
+      #title { position: absolute; top: 18px; left: 20px; font-weight: 800; letter-spacing: .08em; font-size: 15px; }
+      #status { position: absolute; top: 18px; right: 20px; font-weight: 700; font-size: 13px; }
+      #controls { position: fixed; bottom: 16px; left: 16px; padding: 11px 14px; background: rgba(15,18,22,.68); backdrop-filter: blur(8px); color: #eef1f3; font-size: 12px; line-height: 1.65; border: 1px solid rgba(255,255,255,.13); border-radius: 9px; pointer-events: none; }
+      #controls b { color: #fff; }
+      #interact-prompt { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, 48px); padding: 9px 17px; background: rgba(15,18,22,.86); color: #fff; font-size: 14px; font-weight: 750; border-radius: 7px; pointer-events: none; letter-spacing: .04em; }
+      #crosshair { position: fixed; left: 50%; top: 50%; width: 5px; height: 5px; margin: -2.5px; border-radius: 50%; background: rgba(255,255,255,.85); box-shadow: 0 0 8px rgba(0,0,0,.5); pointer-events:none; }
+    </style>
+  </head>
+  <body>
+    <div id="hud"><div id="title">HOUSE HEIST · DAYLIGHT</div><div id="status">Ready</div></div>
+    <div id="crosshair"></div>
+    <div id="interact-prompt">E · OPEN / CLOSE DOOR</div>
+    <div id="controls">
+      <div><b>Click</b> — capture mouse</div>
+      <div><b>W A S D</b> — move &nbsp; <b>Shift</b> — sprint</div>
+      <div><b>Space</b> — jump / double jump</div>
+      <div><b>C / Ctrl</b> — crawl</div>
+      <div><b>E</b> — interact with doors</div>
+      <div><b>1</b> third-person &nbsp; <b>2</b> first-person &nbsp; <b>3</b> top-down</div>
+    </div>
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
